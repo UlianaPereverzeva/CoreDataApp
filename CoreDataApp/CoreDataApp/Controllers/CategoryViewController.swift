@@ -11,13 +11,14 @@ import CoreData
 class CategoryViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
    
     var categories = [CategoryModel]()
-    let context = (UIApplication.shared.delegate as? AppDelegate)?.persistentContainer.viewContext
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var tableView:UITableView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+       
         setUpTableView()
+        getData()
         view.backgroundColor = .white
         tableView.backgroundColor = .white
         
@@ -25,16 +26,6 @@ class CategoryViewController: UIViewController, UITableViewDataSource, UITableVi
         let add = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addTapped))
 
         navigationItem.rightBarButtonItems = [add]
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? CategoryTableViewCell else {
-            return UITableViewCell()
-        }
-        return cell
-    }
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        5
     }
     
     private func setUpTableView() {
@@ -52,9 +43,18 @@ class CategoryViewController: UIViewController, UITableViewDataSource, UITableVi
         tableView.rowHeight = UITableView.automaticDimension
         self.tableView = tableView
     }
-    @objc func addTapped(_ sender:UIButton!) {
-//        let vc = CreatingPostViewController()
-//        self.navigationController?.pushViewController(vc, animated: true)
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? CategoryTableViewCell else {
+            return UITableViewCell()
+        }
+        let category = categories[indexPath.row]
+        cell.setUpName(name: category.name ?? "")
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        categories.count
     }
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
@@ -73,5 +73,55 @@ class CategoryViewController: UIViewController, UITableViewDataSource, UITableVi
     
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         80
+    }
+    
+    @objc func addTapped(_ sender:UIButton!) {
+        
+        let alert = UIAlertController(title: "Add new category", message: "", preferredStyle: .alert)
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Category"
+        }
+        
+        let cancel = UIAlertAction(title: "Cancel", style: .cancel)
+        let addAction = UIAlertAction(title: "Add", style: .default) { [weak self] _
+            in
+            if let textField = alert.textFields?.first,
+               let text = textField.text,
+               text != "",
+               let self = self
+            {
+                let newCategory = CategoryModel(context: self.context)
+                newCategory.name = text
+                self.categories.append(newCategory)
+                self.tableView.insertRows(at: [IndexPath(row: self.categories.count - 1, section: 0)], with: .automatic)
+                self.saveCategories()
+            }
+        }
+        alert.addAction(cancel)
+        alert.addAction(addAction)
+        
+        self.present(alert, animated: true)
+    }
+    
+    private func saveCategories() {
+        do {
+            try context.save()
+        } catch {
+            print("Error save context: \(error)")
+        }
+    }
+    
+    private func getData() {
+        loadCategories()
+        tableView.reloadData()
+    }
+    
+    private func loadCategories (with request: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()) {
+        do {
+            categories = try context.fetch(request)
+        } catch {
+            print("Error fetch context")
+        }
     }
 }
