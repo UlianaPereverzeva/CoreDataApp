@@ -6,9 +6,12 @@
 //
 
 import UIKit
+import CoreData
 
 class CategoryViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
    
+    var categories = [CategoryModel]()
+    let context = (UIApplication.shared.delegate as? AppDelegate)?.persistentContainer.viewContext
     var tableView:UITableView!
     
     override func viewDidLoad() {
@@ -52,5 +55,23 @@ class CategoryViewController: UIViewController, UITableViewDataSource, UITableVi
     @objc func addTapped(_ sender:UIButton!) {
 //        let vc = CreatingPostViewController()
 //        self.navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        true
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            tableView.deleteRows(at: [indexPath], with: .right)
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+    
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        80
     }
 }
